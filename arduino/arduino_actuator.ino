@@ -32,7 +32,8 @@ int up_targ=-1, lo_targ=-1;
 
 byte cmd=0;
 
-void setup(){
+void setup()
+{
   pinMode(UP_APIN,OUTPUT);
   pinMode(UP_BPIN,OUTPUT);
   pinMode(LO_APIN,OUTPUT);
@@ -51,7 +52,8 @@ void setup(){
    3  | 1 | 1 | OFF(BRAKE VCC)
 */
 
-void loop(){
+void loop()
+{
   if(digitalRead(UP_SW1)==LOW){
     up_spd=0;up_dir=0;up_targ=-1;
   }if(digitalRead(LO_SW1)==LOW){
