@@ -2,7 +2,7 @@
  *  by Chandra Boyle
  *
  *  for Arduino Pro ATMEGA328,5V,16MHz;
- *      Pololu VNH5019 Driver Boards
+ *      Pololu VNH5019 Driver Boards;
  *      Firgelli Feedback Rod Linear Actuators
  */
 
