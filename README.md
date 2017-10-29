@@ -8,4 +8,4 @@ rover - rover control and management applications
 
 autonomy - rover autonomous programs
 
-basestation - base station application
+bsapp - base station application
