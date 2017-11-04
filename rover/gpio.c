@@ -4,14 +4,13 @@
  *  description: simplifies access to gpio
  *
  *  usage:
- *      gpio [pin#]                 - alias of gpio enabled [pin#]
- *      gpio enabled [pin#]         - returns and prints pin enabled (0/1)
- *      gpio enable  [pin#]         - enable pin
- *      gpio disable [pin#]         - disable pin
- *      gpio mode    [pin#]         - print and return pin mode
- *      gpio set     [pin#] [mode]  - set pin to mode
- *      gpio read    [pin#]         - print and return pin value (0/1)
- *      gpio write   [pin#] [value] - write value to pin
+ *      gpio [pin#]                  - alias of gpio enabled [pin#]
+ *      gpio [pin#] enable           - enable pin
+ *      gpio [pin#] disable          - disable pin
+ *      gpio [pin#] mode             - print and return pin mode
+ *      gpio [pin#] mode [mode]      - set pin to mode
+ *      gpio [pin#] read             - print and return pin value
+ *      gpio [pin#] write [value]    - write value to pin
 */
 
 #include <sys/fcntl.h>
@@ -28,7 +27,7 @@ int pinenabled(int pin)
 {
     int status;
     struct stat buff;
-    char pfile[32];
+    char pfile[64];
 
     status=sprintf(pfile,"/sys/class/gpio/gpio%d",pin);
     if(status<0) return -1;
@@ -45,7 +44,7 @@ int pinenabled(int pin)
 int enablepin(int pin)
 {
     int status,fd;
-    char pfile[32]="/sys/class/gpio/export";
+    char pfile[64]="/sys/class/gpio/export";
     char buff[8];
 
     status=pinenabled(pin);
@@ -73,7 +72,7 @@ int enablepin(int pin)
 int disablepin(int pin)
 {
     int status,fd;
-    char pfile[32]="/sys/class/gpio/unexport";
+    char pfile[64]="/sys/class/gpio/unexport";
     char buff[8];
 
     status=pinenabled(pin);
@@ -101,7 +100,7 @@ int disablepin(int pin)
 int getmode(int pin)
 {
     int status,fd;
-    char pfile[32];
+    char pfile[64];
     char buff[4];
 
     status=pinenabled(pin);
@@ -113,9 +112,9 @@ int getmode(int pin)
     fd=open(pfile,O_RDONLY);
     if(fd<0) return -1;
 
-    status=read(fd,buff,3);
+    status=read(fd,buff,4);
     if(status<0) return -1;
-    buff[status]='\0';
+    buff[status-1]='\0';
     close(fd);
 
     if(strcmp(buff,"out")==0) return 1;
@@ -129,7 +128,7 @@ int getmode(int pin)
 int setmode(int pin, int mode)
 {
     int status,fd;
-    char pfile[32];
+    char pfile[64];
     char buff[4];
 
     status=pinenabled(pin);
@@ -163,7 +162,7 @@ int setmode(int pin, int mode)
 int readpin(int pin)
 {
     int status,fd;
-    char pfile[32];
+    char pfile[64];
     char val;
 
     status=pinenabled(pin);
@@ -190,7 +189,7 @@ int readpin(int pin)
 int writepin(int pin, int state)
 {
     int status,fd;
-    char pfile[32];
+    char pfile[64];
     char val=state?'1':'0';
 
     status=pinenabled(pin);
@@ -218,21 +217,24 @@ int writepin(int pin, int state)
 int main(int argc, char* argv[])
 {
     int pin,mode,result=0;
-    if(argc==2){
+    if(argc>1){
         if(sscanf(argv[1],"%d",&pin)<0) return -1;
-        result=pinenabled(pin);
-    }else if(argc>2){
-        if(sscanf(argv[2],"%d",&pin)<0) return -1;
-        if(strcmp(argv[1],"enabled")==0) result=pinenabled(pin);
-        else if(strcmp(argv[1],"enable")==0) result=enablepin(pin);
-        else if(strcmp(argv[1],"disable")==0) result=disablepin(pin);
-        else if(strcmp(argv[1],"mode")==0) result=getmode(pin);
-        else if(strcmp(argv[1],"read")==0) result=readpin(pin);
-        else if(argc>3){
-            if(sscanf(argv[3],"%d",&mode)<0) return -1;
-            else if(strcmp(argv[1],"set")==0) result=setmode(pin,mode);
-            else if(strcmp(argv[1],"write")==0) result=writepin(pin,mode);
-        }else result=-1;
+        switch(argc){
+            case 2:
+                result=pinenabled(pin);
+                break;
+            case 3:
+                if(strcmp(argv[2],"enable")==0) result=enablepin(pin);
+                else if(strcmp(argv[2],"disable")==0) result=disablepin(pin);
+                else if(strcmp(argv[2],"mode")==0) result=getmode(pin);
+                else if(strcmp(argv[2],"read")==0) result=readpin(pin);
+                break;
+            case 4:
+                if(sscanf(argv[3],"%d",&mode)<0) return -1;
+                if(strcmp(argv[2],"mode")==0) result=setmode(pin,mode);
+                else if(strcmp(argv[2],"write")==0) result=writepin(pin,mode);
+                break;
+        }
     }if(result>=0) printf("%d",result);
     return result;
 }
