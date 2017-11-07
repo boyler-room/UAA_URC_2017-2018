@@ -235,6 +235,6 @@ int main(int argc, char* argv[])
                 else if(strcmp(argv[2],"write")==0) result=writepin(pin,mode);
                 break;
         }
-    }if(result>=0) printf("%d",result);
+    }if(result>=0) printf("%d\n",result);
     return result;
 }
