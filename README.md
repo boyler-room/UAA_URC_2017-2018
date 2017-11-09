@@ -6,6 +6,6 @@ arduino - arduino hardware interface programs
 
 rover - rover control and management applications
 
-autonomy - rover autonomous programs
+rover/autonomy - rover autonomous programs
 
 bsapp - base station application
