@@ -32,21 +32,21 @@ class stack:
         self.lock=lock()
     def push(self,item):
         self.lock.acquire()
-        if item!=None: q.append(item)
+        if item!=None: self.q.append(item)
         self.lock.release()
     def pop(self):
         item=None
         self.lock.acquire()
-        if len(q)>0:
-            item=q[-1]
-            del q[-1]
+        if len(self.q)>0:
+            item=self.q[-1]
+            del self.q[-1]
         self.lock.release()
         return item
     def peek(self):
         item=None
         self.lock.acquire()
-        if len(q)>0:
-            item=q[-1]
+        if len(self.q)>0:
+            item=self.q[-1]
         self.lock.release()
         return item
 
@@ -56,21 +56,21 @@ class queue:
         self.lock=lock()
     def push(self,item):
         self.lock.acquire()
-        if item!=None: q.append(item)
+        if item!=None: self.q.append(item)
         self.lock.release()
     def pop(self):
         item=None
         self.lock.acquire()
-        if len(q)>0:
-            item=q[0]
-            del q[0]
+        if len(self.q)>0:
+            item=self.q[0]
+            del self.q[0]
         self.lock.release()
         return item
     def peek(self):
         item=None
         self.lock.acquire()
-        if len(q)>0:
-            item=q[0]
+        if len(self.q)>0:
+            item=self.q[0]
         self.lock.release()
         return item
 

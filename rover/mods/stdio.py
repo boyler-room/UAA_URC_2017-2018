@@ -14,7 +14,7 @@ usage:
 """"Chandra Boyle"
 
 #-------------------API Header--------------------
-from basetypes import dispatchError
+from basetypes import dispatchError, queue
 running=True
 dispatch=None
 
@@ -22,34 +22,43 @@ dispatch=None
 from threading import Thread
 import sys, select
 
-outq=[]
-errq=[]
+inq=queue()
+outq=queue()
+errq=queue()
 
-def infunc():
+def iothread():
     global running, dispatch
     p=select.poll()
     p.register(sys.stdin)
     while running:
-        for ev in p.poll():
-            if ev[0]==sys.stdin.fileno() and ev[1]&select.POLLIN==select.POLLIN:
-                reply=None
-                data=sys.stdin.readline().strip()
-                dest=data.split(' ')[0]
-                try: reply=dispatch(dest,data[len(dest)+1:])
-                except dispatchError as e: sys.stderr.write('Error: %s\n'%e)
-                else:
-                    if reply!=None: sys.stdout.write('Reply: %s\n'%reply)
-                sys.stdout.flush()
-                sys.stderr.flush()
+        ev=p.poll()
+        if len(ev)>0 and ev[0][1]&select.POLLIN==select.POLLIN:#data to read
+            inq.push(sys.stdin.readline().strip())
+        if outq.peek()!=None:#data to write
+            sys.stdout.write('\r%s\n'%(outq.pop()))
+            sys.stdout.flush()
+        if errq.peek()!=None:#data to write
+            sys.stderr.write('\r%s\n'%(errq.pop()))
+            sys.stderr.flush()
+        if inq.peek()!=None:#cmds to send
+            data=inq.pop()
+            dest=data.split(' ')[0]
+            data=data[len(dest)+1:]
+            try: reply=dispatch(dest,data)
+            except dispatchError as e: errq.push('Error: %s'%e)
+            else:
+                if reply!=None: outq.push('Reply: %s'%reply)
+
+    p.unregister(sys.stdin)
     dispatch('event','unregister')
 
 #----------------API Functionality----------------
 def init():
     global dispatch
     dispatch('event','register')
-    inthread=Thread(target=infunc)
-    inthread.daemon=True
-    inthread.start()
+    ith=Thread(target=iothread)
+    ith.daemon=True
+    ith.start()
 
 def start():
     global running
@@ -58,13 +67,10 @@ def stop():
     global running
 
 def event(etype,msg):
-    global running
-    sys.stderr.write('Event: %s "%s"\n'%(etype,msg))
-    sys.stderr.flush()
+    global errq
+    errq.push('Event: %s "%s"'%(etype,msg))
 
 def request(cmd):
-    global running
-    reply=None
-    sys.stdout.write('%s\n'%cmd)
-    sys.stdout.flush()
-    return reply
+    global outq
+    outq.push(cmd)
+    return None
