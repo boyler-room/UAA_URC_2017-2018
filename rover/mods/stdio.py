@@ -1,76 +1,78 @@
 info=\
-""""Rover Software API: Terminal Input/Output Module"
+""""Simple User Input Module"
 
 description:
-    provides access to API interface via stdio for typing commands and printing output via the terminal
+	simple text-based interface to command system
 
 usage:
-    enter commands as 'module command' to initiate a dispatch call
-    replies are printed to stdout and errors and events are printed to stderr
-    events can be (un)registered via dispatch to event, all is registered by default
-    cmds sent to request() are printed as is; this module has no controllable funtionallity
-    this module runs 1 (one) thread
+	commands entered into stdin
+	responses printed to stdout
+	events and errors written to stderr when errv True
+	accepts commands
+		print: print a string to stdout
+		noprinterr: disable printing to stderr
+		printerr: enable printing to stderr
+	enter commands as module command
 
 """"Chandra Boyle"
 
 #-------------------API Header--------------------
-from basetypes import dispatchError, queue
-running=True
+from base.types import dispatchError, parsecmd
+running=False
 dispatch=None
 
 #----------Module-Specific Functionality----------
-from threading import Thread
-import sys, select
+import sys,threading
 
-inq=queue()
-outq=queue()
-errq=queue()
-
-def iothread():
-    global running, dispatch
-    p=select.poll()
-    p.register(sys.stdin)
-    while running:
-        ev=p.poll()
-        if len(ev)>0 and ev[0][1]&select.POLLIN==select.POLLIN:#data to read
-            inq.push(sys.stdin.readline().strip())
-        if outq.peek()!=None:#data to write
-            sys.stdout.write('\r%s\n'%(outq.pop()))
-            sys.stdout.flush()
-        if errq.peek()!=None:#data to write
-            sys.stderr.write('\r%s\n'%(errq.pop()))
-            sys.stderr.flush()
-        if inq.peek()!=None:#cmds to send
-            data=inq.pop()
-            dest=data.split(' ')[0]
-            data=data[len(dest)+1:]
-            try: reply=dispatch(dest,data)
-            except dispatchError as e: errq.push('Error: %s'%e)
-            else:
-                if reply!=None: outq.push('Reply: %s'%reply)
-
-    p.unregister(sys.stdin)
-    dispatch('event','unregister')
+errv=True
+thread=None
+def inthread():
+	global running,dispatch
+	global thread,errv
+	while running:
+		data=sys.stdin.readline().strip()
+		dest,cmd=parsecmd(data)
+		try: resp=dispatch(dest,cmd)
+		except dispatchError as e:
+			resp='Error: %s'%e
+			if errv: sys.stderr.write('%s\n'%e)
+		if resp!=None: sys.stdout.write('%s\n'%resp)
+	thread=None
 
 #----------------API Functionality----------------
 def init():
-    global dispatch
-    dispatch('event','register')
-    ith=Thread(target=iothread)
-    ith.daemon=True
-    ith.start()
+	global dispatch
+	dispatch('event',['register'])
 
 def start():
-    global running
+	global running
+	global thread
+	running=True
+	if thread==None:
+		thread=threading.Thread(target=inthread)
+		thread.daemon=True
+		thread.start()
 
 def stop():
-    global running
+	global running
+	running=False
 
-def event(etype,msg):
-    global errq
-    errq.push('Event: %s "%s"'%(etype,msg))
+def event(etype, msg):
+	global errv
+	if errv: sys.stderr.write('Event %s: %s\n'%(type,msg))
 
 def request(cmd):
-    global outq
-    outq.push(cmd)
-    return None
+	global dispatch
+	global errv
+	reply=None
+	if len(cmd)==0: raise dispatchError('Empty command')
+
+	elif cmd[0]=='print' and len(cmd)==2:
+		sys.stdout.write('%s\n'%cmd[1])
+	elif cmd[0]=='printerr' and len(cmd)==1:
+		errv=True
+	elif cmd[0]=='noprinterr' and len(cmd)==1:
+		errv=False
+
+	else: raise dispatchError('Invalid command')
+	return reply
