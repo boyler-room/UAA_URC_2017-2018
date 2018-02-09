@@ -34,10 +34,8 @@
  
 #include <Wire.h>
 
-#define I2C_ADDR 0x05
-
+#define I2C_ADDR 0x04
 byte cmd=0;
-
 void recv(int);
 void req();
 

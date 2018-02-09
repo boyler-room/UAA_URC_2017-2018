@@ -1,4 +1,4 @@
-#define TARGET 1
+#define TARGET 3
 
 #define TARGET_ACTUATOR 1
 #define TARGET_STEPPER 2
