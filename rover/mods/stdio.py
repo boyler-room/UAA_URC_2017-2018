@@ -1,8 +1,7 @@
 info=\
 """"Simple User Input Module"
 
-description:
-	simple text-based interface to command system
+description: simple text-based interface to command system
 
 usage:
 	commands entered into stdin
@@ -59,7 +58,7 @@ def stop():
 
 def event(etype, msg):
 	global errv
-	if errv: sys.stderr.write('Event %s: %s\n'%(type,msg))
+	if errv: sys.stderr.write('Event %s: %s\n'%(etype,msg))
 
 def request(cmd):
 	global dispatch

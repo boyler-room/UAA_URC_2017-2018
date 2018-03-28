@@ -1,16 +1,17 @@
 info=\
 """"Camera Control Module"
 
-description:
-	streaming of cameras using gstreamer's command-line utility
+description: cameras streaming via gst-launch
 
 usage:
-	
+	start [cam]
+	stop [cam]
+	poll [cam]
 
 """"Chandra Boyle"
 
 #-------------------API Header--------------------
-from basetypes import dispatchError
+from base.types import dispatchError
 running=False
 dispatch=None
 
